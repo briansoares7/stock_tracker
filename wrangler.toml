@@ -1,0 +1,8 @@
+name = "big-money-tracker"
+pages_build_output_dir = "."
+
+# This is a plain static site (index.html + deals.json) — no build step needed.
+# Deploy with:
+#   npm install -g wrangler
+#   wrangler login
+#   wrangler pages deploy . --project-name=big-money-tracker

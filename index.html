@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Big Money Tracker — NSE/BSE Deal Disclosures</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#0B0E11;
+    --panel:#111519;
+    --line:#1F242B;
+    --text:#E8E6E1;
+    --dim:#8A9099;
+    --buy:#2FBF71;
+    --sell:#E5484D;
+    --accent:#F0A500;
+    --mono:'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace;
+    --sans:'IBM Plex Sans', 'Inter', -apple-system, sans-serif;
+  }
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:var(--sans); font-size:14px;
+  }
+  .ticker-wrap{
+    background:#08090B; border-bottom:1px solid var(--line);
+    overflow:hidden; white-space:nowrap; padding:8px 0;
+  }
+  .ticker{
+    display:inline-block; padding-left:100%;
+    animation: scroll 40s linear infinite;
+    font-family:var(--mono); font-size:12px; letter-spacing:.02em;
+  }
+  @media (prefers-reduced-motion: reduce){ .ticker{animation:none; padding-left:12px;} }
+  .ticker span{ margin-right:36px; }
+  .tk-buy{color:var(--buy);} .tk-sell{color:var(--sell);}
+  @keyframes scroll{ 0%{transform:translateX(0);} 100%{transform:translateX(-100%);} }
+
+  header{
+    padding:20px 24px 12px; border-bottom:1px solid var(--line);
+    display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:8px;
+  }
+  header h1{
+    font-family:var(--mono); font-size:18px; font-weight:600; margin:0;
+    letter-spacing:.03em;
+  }
+  header h1 .accent{color:var(--accent);}
+  header .meta{ color:var(--dim); font-size:12px; font-family:var(--mono);}
+
+  .layout{ display:grid; grid-template-columns:250px 1fr 260px; gap:0; min-height:calc(100vh - 90px);}
+  @media (max-width:1000px){ .layout{grid-template-columns:1fr;} }
+
+  .panel{ padding:18px; border-right:1px solid var(--line);}
+  .panel:last-child{ border-right:none; }
+  .section-label{
+    font-family:var(--mono); font-size:11px; text-transform:uppercase;
+    color:var(--dim); letter-spacing:.08em; margin:18px 0 8px;
+  }
+  .section-label:first-child{ margin-top:0; }
+
+  select, input[type=text], input[type=date], textarea{
+    width:100%; background:var(--panel); border:1px solid var(--line); color:var(--text);
+    padding:8px 10px; border-radius:4px; font-family:var(--sans); font-size:13px;
+  }
+  textarea{font-family:var(--mono); font-size:11px; min-height:90px; resize:vertical;}
+  select:focus, input:focus, textarea:focus{ outline:1px solid var(--accent); }
+
+  .chip-row{ display:flex; flex-wrap:wrap; gap:6px; }
+  .chip{
+    border:1px solid var(--line); background:var(--panel); color:var(--dim);
+    padding:5px 10px; border-radius:100px; font-size:12px; cursor:pointer; user-select:none;
+  }
+  .chip.active{ border-color:var(--accent); color:var(--accent); }
+
+  button.load-btn, button.small-btn{
+    background:var(--accent); color:#0B0E11; border:none; font-weight:600;
+    padding:8px 12px; border-radius:4px; cursor:pointer; font-size:12px; font-family:var(--sans);
+  }
+  button.small-btn{ background:transparent; color:var(--dim); border:1px solid var(--line); margin-top:6px; width:100%;}
+  button.small-btn:hover{ color:var(--text); border-color:var(--dim); }
+
+  .cards{ display:grid; grid-template-columns:repeat(4,1fr); gap:12px; padding:18px 18px 0; }
+  @media (max-width:700px){ .cards{grid-template-columns:repeat(2,1fr);} }
+  .card{ background:var(--panel); border:1px solid var(--line); border-radius:6px; padding:14px; }
+  .card .label{ font-size:11px; color:var(--dim); text-transform:uppercase; letter-spacing:.06em;}
+  .card .value{ font-family:var(--mono); font-size:20px; margin-top:6px; font-weight:600;}
+  .card .value.buy{ color:var(--buy); } .card .value.sell{ color:var(--sell); }
+
+  .chart-wrap{ padding:18px; }
+  .table-wrap{ padding:0 18px 18px; overflow-x:auto; }
+  table{ width:100%; border-collapse:collapse; font-family:var(--mono); font-size:12px; }
+  th{
+    text-align:left; padding:8px 10px; color:var(--dim); font-weight:500;
+    border-bottom:1px solid var(--line); position:sticky; top:0; background:var(--bg);
+    cursor:pointer; white-space:nowrap;
+  }
+  th:hover{ color:var(--text); }
+  td{ padding:7px 10px; border-bottom:1px solid var(--line); white-space:nowrap; }
+  tr:hover td{ background:var(--panel); }
+  .side-buy{ color:var(--buy); font-weight:600; }
+  .side-sell{ color:var(--sell); font-weight:600; }
+  .cat-tag{
+    font-size:10px; padding:2px 6px; border-radius:3px; border:1px solid var(--line); color:var(--dim);
+  }
+
+  .leader-item{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:8px 0; border-bottom:1px solid var(--line); font-size:12px;
+  }
+  .leader-item:last-child{ border-bottom:none; }
+  .leader-name{ font-family:var(--sans); color:var(--text); }
+  .leader-val{ font-family:var(--mono); font-weight:600; }
+
+  .empty-state{ padding:60px 20px; text-align:center; color:var(--dim); }
+  .empty-state b{ color:var(--text); }
+  .banner{
+    background:#1a1408; border:1px solid #3a2c05; color:var(--accent);
+    font-size:12px; padding:8px 12px; margin:0 18px 12px; border-radius:4px; font-family:var(--mono);
+  }
+</style>
+</head>
+<body>
+
+<div class="ticker-wrap"><div id="ticker" class="ticker"></div></div>
+
+<header>
+  <h1>BIG MONEY <span class="accent">TRACKER</span> — NSE / BSE Deal Disclosures</h1>
+  <div class="meta" id="meta-line">no data loaded</div>
+</header>
+
+<div class="layout">
+  <!-- LEFT: FILTERS -->
+  <div class="panel">
+    <div class="section-label">Data source</div>
+    <textarea id="jsonInput" placeholder='Paste output of fetch_deals.py here, e.g. {"deals":[...]}'></textarea>
+    <button class="load-btn" style="margin-top:8px;width:100%;" onclick="loadFromTextarea()">Load pasted JSON</button>
+    <button class="small-btn" onclick="document.getElementById('fileInput').click()">Upload deals.json</button>
+    <input type="file" id="fileInput" accept=".json" style="display:none" onchange="loadFromFile(event)">
+    <button class="small-btn" onclick="loadSample()">Load sample data</button>
+
+    <div class="section-label">Fetch from URL</div>
+    <input type="text" id="fetchUrl" placeholder="raw JSON URL (e.g. GitHub raw)">
+    <button class="small-btn" onclick="loadFromUrl()">Fetch now</button>
+    <div style="display:flex; align-items:center; gap:8px; margin-top:8px;">
+      <input type="checkbox" id="autoRefreshToggle" onchange="toggleAutoRefresh()" style="width:auto;">
+      <label for="autoRefreshToggle" style="font-size:12px; color:var(--dim);">Auto-refresh every</label>
+      <input type="text" id="refreshMinutes" value="15" style="width:50px;" onchange="toggleAutoRefresh()">
+      <span style="font-size:12px; color:var(--dim);">min</span>
+    </div>
+    <div id="refreshStatus" style="font-size:11px; color:var(--dim); font-family:var(--mono); margin-top:4px;"></div>
+
+    <div class="section-label">Exchange</div>
+    <div class="chip-row" id="exchangeChips"></div>
+
+    <div class="section-label">Deal type</div>
+    <div class="chip-row" id="categoryChips"></div>
+
+    <div class="section-label">Side</div>
+    <div class="chip-row" id="sideChips"></div>
+
+    <div class="section-label">Search stock / client</div>
+    <input type="text" id="searchBox" placeholder="e.g. TATASTEEL or client name" oninput="render()">
+
+    <div class="section-label">Min. deal value (₹)</div>
+    <input type="text" id="minValue" placeholder="e.g. 10000000" oninput="render()">
+  </div>
+
+  <!-- CENTER: SUMMARY + TABLE -->
+  <div class="panel" style="border-right:1px solid var(--line);">
+    <div id="bannerArea"></div>
+    <div class="cards" id="cards"></div>
+    <div class="chart-wrap"><canvas id="chart" height="90"></canvas></div>
+    <div class="table-wrap">
+      <table id="dealsTable">
+        <thead>
+          <tr>
+            <th data-k="date">Date</th>
+            <th data-k="exchange">Exch</th>
+            <th data-k="category">Type</th>
+            <th data-k="symbol">Symbol</th>
+            <th data-k="client">Client</th>
+            <th data-k="side">Side</th>
+            <th data-k="quantity">Qty</th>
+            <th data-k="price">Price</th>
+            <th data-k="value">Value (₹)</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- RIGHT: LEADERBOARD -->
+  <div class="panel">
+    <div class="section-label">Top net buyers</div>
+    <div id="topBuyers"></div>
+    <div class="section-label">Top net sellers</div>
+    <div id="topSellers"></div>
+    <div class="section-label">Most active stocks</div>
+    <div id="topStocks"></div>
+  </div>
+</div>
+
+<script>
+let deals = [];
+let filters = { exchange: 'ALL', category: 'ALL', side: 'ALL' };
+let sortKey = 'value', sortDir = -1;
+let chart;
+
+function fmtINR(n){
+  n = Number(n)||0;
+  if (Math.abs(n) >= 1e7) return '₹'+(n/1e7).toFixed(2)+'Cr';
+  if (Math.abs(n) >= 1e5) return '₹'+(n/1e5).toFixed(2)+'L';
+  return '₹'+n.toLocaleString('en-IN');
+}
+function fmtNum(n){ return Number(n||0).toLocaleString('en-IN'); }
+
+function setDeals(payload, sourceLabel){
+  const arr = Array.isArray(payload) ? payload : (payload.deals || []);
+  deals = arr.filter(d => d && d.symbol);
+  const metaLine = document.getElementById('meta-line');
+  metaLine.textContent = `${deals.length} deals loaded — ${sourceLabel}` + (payload.generated_at ? ` — fetched ${payload.generated_at}` : '');
+  buildChips();
+  render();
+}
+
+function loadFromTextarea(){
+  const raw = document.getElementById('jsonInput').value.trim();
+  if (!raw) return;
+  try{ setDeals(JSON.parse(raw), 'pasted JSON'); }
+  catch(e){ alert('Could not parse JSON: '+e.message); }
+}
+function loadFromFile(evt){
+  const file = evt.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try{ setDeals(JSON.parse(reader.result), file.name); }
+    catch(e){ alert('Could not parse JSON: '+e.message); }
+  };
+  reader.readAsText(file);
+}
+let refreshTimer = null;
+
+async function loadFromUrl(silent){
+  const url = document.getElementById('fetchUrl').value.trim();
+  if (!url) return;
+  // cache-bust so browsers/CDNs don't serve a stale copy on auto-refresh
+  const bust = url.includes('?') ? '&_=' : '?_=';
+  try{
+    const res = await fetch(url + bust + Date.now());
+    if (!res.ok) throw new Error('HTTP '+res.status);
+    const data = await res.json();
+    setDeals(data, url);
+    document.getElementById('refreshStatus').textContent =
+      'last refreshed ' + new Date().toLocaleTimeString();
+  }catch(e){
+    document.getElementById('refreshStatus').textContent =
+      'fetch failed at ' + new Date().toLocaleTimeString() + ': ' + e.message;
+    if (!silent) alert('Fetch failed (CORS or network): '+e.message);
+  }
+}
+
+function toggleAutoRefresh(){
+  if (refreshTimer){ clearInterval(refreshTimer); refreshTimer = null; }
+  const on = document.getElementById('autoRefreshToggle').checked;
+  const mins = Math.max(1, parseFloat(document.getElementById('refreshMinutes').value) || 15);
+  if (on){
+    refreshTimer = setInterval(() => loadFromUrl(true), mins*60*1000);
+    document.getElementById('refreshStatus').textContent = `auto-refresh on — every ${mins} min`;
+  } else {
+    document.getElementById('refreshStatus').textContent = '';
+  }
+}
+
+// Support bookmarkable/unattended launches: index.html?source=<url>&interval=<min>
+// Defaults to a same-folder deals.json so a deployed site (GitHub Pages /
+// Cloudflare Pages, same repo as the Actions workflow) works with zero config.
+(function initFromQuery(){
+  const params = new URLSearchParams(window.location.search);
+  const source = params.get('source') || 'deals.json';
+  const interval = params.get('interval') || '15';
+  document.getElementById('fetchUrl').value = source;
+  document.getElementById('refreshMinutes').value = interval;
+  document.getElementById('autoRefreshToggle').checked = true;
+  loadFromUrl(true).then(() => toggleAutoRefresh());
+})();
+
+function loadSample(){
+  // Clearly-labelled placeholder/sample data — NOT real trades or real people.
+  const clients = ['Ridgeline Capital LLP','Northstar Family Trust','Meridian Advisors','Silverleaf Investments','Kestrel Holdings','Oakwood Trading Co','Bluepeak Ventures','Ironclad Capital'];
+  const stocks = [['TATASTEEL','Tata Steel Ltd'],['RELIANCE','Reliance Industries'],['ZOMATO','Eternal Ltd'],['IRFC','Indian Railway Finance Corp'],['YESBANK','Yes Bank Ltd'],['SUZLON','Suzlon Energy'],['IDEA','Vodafone Idea'],['PNB','Punjab National Bank']];
+  const cats = ['bulk','block','short'];
+  const sides = ['BUY','SELL'];
+  const rows = [];
+  const today = new Date();
+  for (let i=0;i<70;i++){
+    const d = new Date(today); d.setDate(d.getDate() - Math.floor(Math.random()*7));
+    const [sym, name] = stocks[Math.floor(Math.random()*stocks.length)];
+    const qty = Math.floor(100000 + Math.random()*4000000);
+    const price = +(20 + Math.random()*400).toFixed(2);
+    rows.push({
+      date: d.toISOString().slice(0,10),
+      exchange: Math.random() > 0.4 ? 'NSE' : 'BSE',
+      category: cats[Math.floor(Math.random()*cats.length)],
+      symbol: sym, company: name,
+      client: clients[Math.floor(Math.random()*clients.length)],
+      side: sides[Math.floor(Math.random()*sides.length)],
+      quantity: qty, price: price, value: Math.round(qty*price)
+    });
+  }
+  document.getElementById('bannerArea').innerHTML =
+    '<div class="banner">⚠ SAMPLE DATA — randomly generated placeholder names/numbers, for layout preview only. Load real output from fetch_deals.py to see actual disclosures.</div>';
+  setDeals({deals: rows, generated_at: 'sample'}, 'sample data');
+}
+
+function buildChips(){
+  const exch = ['ALL', ...new Set(deals.map(d=>d.exchange).filter(Boolean))];
+  const cats = ['ALL', ...new Set(deals.map(d=>d.category).filter(Boolean))];
+  const sides = ['ALL', ...new Set(deals.map(d=>d.side).filter(Boolean))];
+  renderChips('exchangeChips', exch, 'exchange');
+  renderChips('categoryChips', cats, 'category');
+  renderChips('sideChips', sides, 'side');
+}
+function renderChips(containerId, values, key){
+  const el = document.getElementById(containerId);
+  el.innerHTML = values.map(v =>
+    `<div class="chip ${filters[key]===v?'active':''}" onclick="setFilter('${key}','${v}')">${v}</div>`
+  ).join('');
+}
+function setFilter(key, val){
+  filters[key] = val;
+  buildChips();
+  render();
+}
+
+function getFiltered(){
+  const q = document.getElementById('searchBox').value.trim().toLowerCase();
+  const minVal = parseFloat(document.getElementById('minValue').value) || 0;
+  return deals.filter(d => {
+    if (filters.exchange!=='ALL' && d.exchange!==filters.exchange) return false;
+    if (filters.category!=='ALL' && d.category!==filters.category) return false;
+    if (filters.side!=='ALL' && d.side!==filters.side) return false;
+    if (minVal && Number(d.value)<minVal) return false;
+    if (q){
+      const hay = `${d.symbol||''} ${d.company||''} ${d.client||''}`.toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+function render(){
+  const filtered = getFiltered();
+  renderCards(filtered);
+  renderTicker(filtered);
+  renderTable(filtered);
+  renderLeaderboards(filtered);
+  renderChart(filtered);
+}
+
+function renderCards(filtered){
+  const buyVal = filtered.filter(d=>d.side==='BUY').reduce((s,d)=>s+Number(d.value||0),0);
+  const sellVal = filtered.filter(d=>d.side==='SELL').reduce((s,d)=>s+Number(d.value||0),0);
+  const stockCounts = {};
+  filtered.forEach(d=>{ stockCounts[d.symbol]=(stockCounts[d.symbol]||0)+1; });
+  const topStock = Object.entries(stockCounts).sort((a,b)=>b[1]-a[1])[0];
+  document.getElementById('cards').innerHTML = `
+    <div class="card"><div class="label">Deals shown</div><div class="value">${filtered.length}</div></div>
+    <div class="card"><div class="label">Total buy value</div><div class="value buy">${fmtINR(buyVal)}</div></div>
+    <div class="card"><div class="label">Total sell value</div><div class="value sell">${fmtINR(sellVal)}</div></div>
+    <div class="card"><div class="label">Most active</div><div class="value">${topStock ? topStock[0] : '—'}</div></div>
+  `;
+}
+
+function renderTicker(filtered){
+  const recent = [...filtered].sort((a,b)=> new Date(b.date)-new Date(a.date)).slice(0,25);
+  document.getElementById('ticker').innerHTML = recent.map(d =>
+    `<span class="tk-${d.side==='BUY'?'buy':'sell'}">${d.symbol} ${d.side==='BUY'?'▲':'▼'} ${fmtNum(d.quantity)} @ ${d.price} — ${d.client}</span>`
+  ).join('') || '<span>No deals match current filters</span>';
+}
+
+function renderTable(filtered){
+  const sorted = [...filtered].sort((a,b)=>{
+    let va=a[sortKey], vb=b[sortKey];
+    if (typeof va === 'string'){ va=va||''; vb=vb||''; return sortDir*va.localeCompare(vb); }
+    return sortDir*((va||0)-(vb||0));
+  });
+  const tbody = document.getElementById('tbody');
+  if (!sorted.length){
+    tbody.innerHTML = `<tr><td colspan="9" class="empty-state">No deals match these filters — try widening date range or clearing filters.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = sorted.slice(0,300).map(d => `
+    <tr>
+      <td>${d.date||''}</td>
+      <td>${d.exchange||''}</td>
+      <td><span class="cat-tag">${(d.category||'').toUpperCase()}</span></td>
+      <td>${d.symbol||''}</td>
+      <td>${d.client||''}</td>
+      <td class="side-${(d.side||'').toLowerCase()}">${d.side||''}</td>
+      <td>${fmtNum(d.quantity)}</td>
+      <td>${d.price||''}</td>
+      <td>${fmtINR(d.value)}</td>
+    </tr>
+  `).join('');
+}
+
+document.querySelectorAll('#dealsTable th').forEach(th => {
+  th.addEventListener('click', () => {
+    const k = th.dataset.k;
+    if (sortKey===k) sortDir *= -1; else { sortKey=k; sortDir=-1; }
+    render();
+  });
+});
+
+function renderLeaderboards(filtered){
+  const net = {};
+  filtered.forEach(d=>{
+    net[d.client] = net[d.client] || {buy:0, sell:0};
+    if (d.side==='BUY') net[d.client].buy += Number(d.value||0);
+    else if (d.side==='SELL') net[d.client].sell += Number(d.value||0);
+  });
+  const rows = Object.entries(net).map(([name, v]) => ({name, net: v.buy - v.sell}));
+  const buyers = rows.filter(r=>r.net>0).sort((a,b)=>b.net-a.net).slice(0,6);
+  const sellers = rows.filter(r=>r.net<0).sort((a,b)=>a.net-b.net).slice(0,6);
+
+  document.getElementById('topBuyers').innerHTML = buyers.map(r =>
+    `<div class="leader-item"><span class="leader-name">${r.name}</span><span class="leader-val" style="color:var(--buy)">+${fmtINR(r.net)}</span></div>`
+  ).join('') || '<div class="leader-item"><span class="leader-name">—</span></div>';
+
+  document.getElementById('topSellers').innerHTML = sellers.map(r =>
+    `<div class="leader-item"><span class="leader-name">${r.name}</span><span class="leader-val" style="color:var(--sell)">${fmtINR(r.net)}</span></div>`
+  ).join('') || '<div class="leader-item"><span class="leader-name">—</span></div>';
+
+  const stockVal = {};
+  filtered.forEach(d=>{ stockVal[d.symbol] = (stockVal[d.symbol]||0) + Number(d.value||0); });
+  const topStocks = Object.entries(stockVal).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  document.getElementById('topStocks').innerHTML = topStocks.map(([sym,val]) =>
+    `<div class="leader-item"><span class="leader-name">${sym}</span><span class="leader-val">${fmtINR(val)}</span></div>`
+  ).join('') || '<div class="leader-item"><span class="leader-name">—</span></div>';
+}
+
+function renderChart(filtered){
+  const byDate = {};
+  filtered.forEach(d=>{
+    byDate[d.date] = byDate[d.date] || {buy:0, sell:0};
+    if (d.side==='BUY') byDate[d.date].buy += Number(d.value||0);
+    else if (d.side==='SELL') byDate[d.date].sell += Number(d.value||0);
+  });
+  const dates = Object.keys(byDate).sort();
+  const ctx = document.getElementById('chart');
+  if (chart) chart.destroy();
+  chart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: dates,
+      datasets: [
+        { label:'Buy value', data: dates.map(d=>byDate[d].buy), backgroundColor:'#2FBF71' },
+        { label:'Sell value', data: dates.map(d=>byDate[d].sell), backgroundColor:'#E5484D' },
+      ]
+    },
+    options: {
+      responsive:true,
+      plugins:{ legend:{ labels:{ color:'#8A9099', font:{family:'IBM Plex Mono', size:11} } } },
+      scales:{
+        x:{ ticks:{ color:'#8A9099', font:{family:'IBM Plex Mono', size:10} }, grid:{ color:'#1F242B' } },
+        y:{ ticks:{ color:'#8A9099', font:{family:'IBM Plex Mono', size:10}, callback:v=>fmtINR(v) }, grid:{ color:'#1F242B' } }
+      }
+    }
+  });
+}
+
+// initial empty state
+document.getElementById('tbody').innerHTML = `<tr><td colspan="9" class="empty-state"><b>No data loaded yet.</b><br>Paste JSON from fetch_deals.py, upload a file, fetch from a URL, or load sample data to preview the layout.</td></tr>`;
+</script>
+</body>
+</html>
