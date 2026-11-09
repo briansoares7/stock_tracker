@@ -1,5 +1,114 @@
 {
-  "generated_at": "2026-11-06T17:12:09",
-  "count": 0,
-  "deals": []
+  "generated_at": "2026-11-09T10:58:34",
+  "count": 9,
+  "deals": [
+    {
+      "date": "08-Nov-2026",
+      "exchange": "NSE",
+      "category": "bulk",
+      "symbol": "MOBILISE",
+      "company": "Mobilise App Lab Limited",
+      "client": "KULBHUSHAN PARASHAR",
+      "side": "BUY",
+      "quantity": 150400.0,
+      "price": 120.99,
+      "value": 18196896.0
+    },
+    {
+      "date": "08-Nov-2026",
+      "exchange": "NSE",
+      "category": "bulk",
+      "symbol": "MOBILISE",
+      "company": "Mobilise App Lab Limited",
+      "client": "PRAMOD TRADERS",
+      "side": "SELL",
+      "quantity": 96000.0,
+      "price": 121.0,
+      "value": 11616000.0
+    },
+    {
+      "date": "08-Nov-2026",
+      "exchange": "NSE",
+      "category": "bulk",
+      "symbol": "MOBILISE",
+      "company": "Mobilise App Lab Limited",
+      "client": "MAAHIR CONSULTANTS",
+      "side": "SELL",
+      "quantity": 62400.0,
+      "price": 121.0,
+      "value": 7550400.0
+    },
+    {
+      "date": "08-Nov-2026",
+      "exchange": "NSE",
+      "category": "block",
+      "symbol": "MOBILISE",
+      "company": "Mobilise App Lab Limited",
+      "client": "KULBHUSHAN PARASHAR",
+      "side": "BUY",
+      "quantity": 150400.0,
+      "price": 120.99,
+      "value": 18196896.0
+    },
+    {
+      "date": "08-Nov-2026",
+      "exchange": "NSE",
+      "category": "block",
+      "symbol": "MOBILISE",
+      "company": "Mobilise App Lab Limited",
+      "client": "PRAMOD TRADERS",
+      "side": "SELL",
+      "quantity": 96000.0,
+      "price": 121.0,
+      "value": 11616000.0
+    },
+    {
+      "date": "08-Nov-2026",
+      "exchange": "NSE",
+      "category": "block",
+      "symbol": "MOBILISE",
+      "company": "Mobilise App Lab Limited",
+      "client": "MAAHIR CONSULTANTS",
+      "side": "SELL",
+      "quantity": 62400.0,
+      "price": 121.0,
+      "value": 7550400.0
+    },
+    {
+      "date": "08-Nov-2026",
+      "exchange": "NSE",
+      "category": "short",
+      "symbol": "MOBILISE",
+      "company": "Mobilise App Lab Limited",
+      "client": "KULBHUSHAN PARASHAR",
+      "side": "BUY",
+      "quantity": 150400.0,
+      "price": 120.99,
+      "value": 18196896.0
+    },
+    {
+      "date": "08-Nov-2026",
+      "exchange": "NSE",
+      "category": "short",
+      "symbol": "MOBILISE",
+      "company": "Mobilise App Lab Limited",
+      "client": "PRAMOD TRADERS",
+      "side": "SELL",
+      "quantity": 96000.0,
+      "price": 121.0,
+      "value": 11616000.0
+    },
+    {
+      "date": "08-Nov-2026",
+      "exchange": "NSE",
+      "category": "short",
+      "symbol": "MOBILISE",
+      "company": "Mobilise App Lab Limited",
+      "client": "MAAHIR CONSULTANTS",
+      "side": "SELL",
+      "quantity": 62400.0,
+      "price": 121.0,
+      "value": 7550400.0
+    }
+  ]
 }
